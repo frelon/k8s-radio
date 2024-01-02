@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: k8s-radio
   name: rtlsdrreceiver-sample
 spec:
-  # TODO(user): Add fields here
+  version: v5

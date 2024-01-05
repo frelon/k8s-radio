@@ -1,0 +1,22 @@
+# Build the manager binary
+FROM registry.opensuse.org/opensuse/tumbleweed as builder
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN zypper --non-interactive install --no-recommends go libusb-1_0-devel
+WORKDIR /workspace
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY cmd/device-plugin/main.go cmd/device-plugin/main.go
+COPY api/ api/
+COPY internal/controller/ internal/controller/
+RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o device-plugin cmd/device-plugin/main.go
+
+FROM registry.opensuse.org/opensuse/tumbleweed:latest
+RUN zypper --non-interactive install --no-recommends libusb-1_0-0
+WORKDIR /root
+COPY --from=builder /workspace/device-plugin .
+ENTRYPOINT ["./device-plugin", "-logtostderr=true", "-stderrthreshold=INFO", "-v=5"]

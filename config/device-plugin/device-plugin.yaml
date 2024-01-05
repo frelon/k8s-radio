@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: device-plugin
+  namespace: system
+  labels:
+    control-plane: device-plugin
+    app.kubernetes.io/name: daemonset
+    app.kubernetes.io/instance: device-plugin
+    app.kubernetes.io/component: device-plugin
+    app.kubernetes.io/created-by: k8s-radio
+    app.kubernetes.io/part-of: k8s-radio
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  selector:
+    matchLabels:
+      control-plane: device-plugin
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: device-plugin
+      labels:
+        control-plane: device-plugin
+    spec:
+      containers:
+      - image: device-plugin:latest
+        name: device-plugin
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        volumeMounts:
+        - name: dp
+          mountPath: /var/lib/kubelet/device-plugins
+        - name: dev
+          mountPath: /dev
+      serviceAccountName: device-plugin
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: dp
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: dev
+          hostPath:
+            path: /dev

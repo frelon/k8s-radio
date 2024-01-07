@@ -2,6 +2,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:dev
 DP_IMG ?= device-plugin:dev
+RTLSDR_IMG ?= rtl-sdr:dev
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.28.0
 
@@ -99,6 +100,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} .
 	$(CONTAINER_TOOL) build -t ${DP_IMG} -f Dockerfile.device-plugin .
+	$(CONTAINER_TOOL) build -t ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
@@ -127,6 +129,10 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
+.PHONY: cluster
+cluster: 
+	$(KIND) create cluster --config=.kind.yaml
+
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
@@ -140,11 +146,13 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KIND) load docker-image ${IMG}
 	$(KIND) load docker-image ${DP_IMG}
+	$(KIND) load docker-image ${RTLSDR_IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
 	$(KUSTOMIZE) build config/samples | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/samples | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Build Dependencies

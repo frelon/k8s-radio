@@ -17,13 +17,24 @@ limitations under the License.
 package v1beta1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	PodFailedReason = "PodFailed"
+	ReadyCondition  = "Ready"
 )
 
 // RtlSdrReceiverSpec defines the desired state of RtlSdrReceiver
 type RtlSdrReceiverSpec struct {
 	// +kubebuilder:validation:Default=v4
-	Version string `json:"version,omitempty"`
+	Version RtlSdrVersion `json:"version"`
+
+	// Frequency is the radio frequency to tune the receiver to.
+	// +kubebuilder:example="101.9M"
+	// +kubebuilder:validation:Required
+	Frequency resource.Quantity `json:"frequency"`
 }
 
 // +kubebuilder:validation:Enum=v3;v4
@@ -36,6 +47,9 @@ const (
 
 // RtlSdrReceiverStatus defines the observed state of RtlSdrReceiver
 type RtlSdrReceiverStatus struct {
+	// Conditions describe the state of the receiver.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
 //+kubebuilder:object:root=true

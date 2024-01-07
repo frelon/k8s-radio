@@ -9,4 +9,5 @@ metadata:
     app.kubernetes.io/created-by: k8s-radio
   name: rtlsdrreceiver-sample
 spec:
-  version: v5
+  version: v3
+  frequency: "101.9M"

@@ -18,13 +18,26 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	radiov1beta1 "github.com/frelon/k8s-radio/api/v1beta1"
+)
+
+const (
+	RtlSdrResourceName = "frelon.se/rtl-sdr"
+	RtlSdrDefaultImage = "rtl-sdr:dev"
 )
 
 // RtlSdrReceiverReconciler reconciles a RtlSdrReceiver object
@@ -33,30 +46,81 @@ type RtlSdrReceiverReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the RtlSdrReceiver object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+// +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	receiver := &radiov1beta1.RtlSdrReceiver{}
+	if err := r.Get(ctx, req.NamespacedName, receiver); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(5).Info("Object was not found, not an error")
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, fmt.Errorf("failed to get seedimage object: %w", err)
+	}
 
-	return ctrl.Result{}, nil
+	pod := &corev1.Pod{}
+	if err := r.Get(ctx, req.NamespacedName, pod); err != nil {
+		if !apierrors.IsNotFound(err) {
+			logger.Error(err, "Error getting pod (Not not found), returning.")
+			return reconcile.Result{}, err
+		}
+
+		logger.V(5).Info("Pod not found, creating it...")
+
+		pod.Name = receiver.Name
+		pod.Namespace = receiver.Namespace
+		pod.Spec = corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:    "receiver",
+					Image:   RtlSdrDefaultImage,
+					Command: []string{"/bin/rtl_tcp"},
+					Args:    []string{"-a", "0.0.0.0", "-f", receiver.Spec.Frequency.String()},
+					Ports: []corev1.ContainerPort{
+						{
+							HostPort:      1234,
+							ContainerPort: 1234,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							RtlSdrResourceName: *resource.NewQuantity(1, resource.DecimalSI),
+						},
+					},
+				},
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(receiver, pod, r.Scheme); err != nil {
+			meta.SetStatusCondition(&receiver.Status.Conditions, metav1.Condition{
+				Type:    radiov1beta1.ReadyCondition,
+				Status:  metav1.ConditionFalse,
+				Reason:  radiov1beta1.PodFailedReason,
+				Message: err.Error(),
+			})
+			return reconcile.Result{}, err
+		}
+
+		if err := r.Create(ctx, pod); err != nil {
+			logger.Error(err, "Error getting pod (Not not found), returning.")
+			return reconcile.Result{}, err
+		}
+	}
+
+	logger.V(5).Info("Reconcile successful.")
+
+	return reconcile.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RtlSdrReceiverReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&radiov1beta1.RtlSdrReceiver{}).
+		Owns(&corev1.Pod{}).
 		Complete(r)
 }

@@ -89,9 +89,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	image, found := os.LookupEnv("RTLSDR_IMAGE")
+	if !found {
+		setupLog.Info("using default RTL-SDR image")
+		image = controller.RtlSdrDefaultImage
+	}
+
 	if err = (&controller.RtlSdrReceiverReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Image:  image,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RtlSdrReceiver")
 		os.Exit(1)

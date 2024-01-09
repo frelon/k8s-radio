@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,8 +34,12 @@ type RtlSdrReceiverSpec struct {
 
 	// Frequency is the radio frequency to tune the receiver to.
 	// +kubebuilder:example="101.9M"
-	// +kubebuilder:validation:Required
-	Frequency resource.Quantity `json:"frequency"`
+	// +optional
+	Frequency *resource.Quantity `json:"frequency"`
+
+	// ContainerPort contains the port settings for the Pod.
+	// +optional
+	ContainerPort *corev1.ContainerPort `json:"port"`
 }
 
 // +kubebuilder:validation:Enum=v3;v4

@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,6 +45,8 @@ const (
 type RtlSdrReceiverReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	Image string
 }
 
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers,verbs=get;list;watch;create;update;patch;delete
@@ -71,43 +74,8 @@ func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 		logger.V(5).Info("Pod not found, creating it...")
 
-		pod.Name = receiver.Name
-		pod.Namespace = receiver.Namespace
-		pod.Spec = corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "receiver",
-					Image:   RtlSdrDefaultImage,
-					Command: []string{"/bin/rtl_tcp"},
-					Args:    []string{"-a", "0.0.0.0", "-f", receiver.Spec.Frequency.String()},
-					Ports: []corev1.ContainerPort{
-						{
-							HostPort:      1234,
-							ContainerPort: 1234,
-							Protocol:      corev1.ProtocolTCP,
-						},
-					},
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							RtlSdrResourceName: *resource.NewQuantity(1, resource.DecimalSI),
-						},
-					},
-				},
-			},
-		}
-
-		if err := controllerutil.SetControllerReference(receiver, pod, r.Scheme); err != nil {
-			meta.SetStatusCondition(&receiver.Status.Conditions, metav1.Condition{
-				Type:    radiov1beta1.ReadyCondition,
-				Status:  metav1.ConditionFalse,
-				Reason:  radiov1beta1.PodFailedReason,
-				Message: err.Error(),
-			})
-			return reconcile.Result{}, err
-		}
-
-		if err := r.Create(ctx, pod); err != nil {
-			logger.Error(err, "Error getting pod (Not not found), returning.")
+		err = r.createPod(ctx, receiver)
+		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -115,6 +83,55 @@ func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	logger.V(5).Info("Reconcile successful.")
 
 	return reconcile.Result{}, nil
+}
+
+func (r *RtlSdrReceiverReconciler) createPod(ctx context.Context, receiver *radiov1beta1.RtlSdrReceiver) error {
+	pod := &corev1.Pod{}
+
+	args := []string{"-a", "0.0.0.0"}
+	if receiver.Spec.Frequency != nil {
+		args = append(args, "-f", receiver.Spec.Frequency.String())
+	}
+
+	listenPort := 1234
+	ports := []corev1.ContainerPort{}
+	if receiver.Spec.ContainerPort != nil {
+		ports = append(ports, *receiver.Spec.ContainerPort)
+		listenPort = int(receiver.Spec.ContainerPort.ContainerPort)
+	}
+
+	args = append(args, "-p", strconv.Itoa(listenPort))
+
+	pod.Name = receiver.Name
+	pod.Namespace = receiver.Namespace
+	pod.Spec = corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:    "receiver",
+				Image:   r.Image,
+				Command: []string{"/bin/rtl_tcp"},
+				Args:    args,
+				Ports:   ports,
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						RtlSdrResourceName: *resource.NewQuantity(1, resource.DecimalSI),
+					},
+				},
+			},
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(receiver, pod, r.Scheme); err != nil {
+		meta.SetStatusCondition(&receiver.Status.Conditions, metav1.Condition{
+			Type:    radiov1beta1.ReadyCondition,
+			Status:  metav1.ConditionFalse,
+			Reason:  radiov1beta1.PodFailedReason,
+			Message: err.Error(),
+		})
+		return err
+	}
+
+	return r.Create(ctx, pod)
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -11,3 +11,7 @@ metadata:
 spec:
   version: v3
   frequency: "101.9M"
+  port:
+    containerPort: 1234
+    hostPort: 1234
+    protocol: TCP

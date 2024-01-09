@@ -43,13 +43,43 @@ spec:
                 example: 101.9M
                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                 x-kubernetes-int-or-string: true
+              port:
+                description: ContainerPort contains the port settings for the Pod.
+                properties:
+                  containerPort:
+                    description: Number of port to expose on the pod's IP address.
+                      This must be a valid port number, 0 < x < 65536.
+                    format: int32
+                    type: integer
+                  hostIP:
+                    description: What host IP to bind the external port to.
+                    type: string
+                  hostPort:
+                    description: Number of port to expose on the host. If specified,
+                      this must be a valid port number, 0 < x < 65536. If HostNetwork
+                      is specified, this must match ContainerPort. Most containers
+                      do not need this.
+                    format: int32
+                    type: integer
+                  name:
+                    description: If specified, this must be an IANA_SVC_NAME and unique
+                      within the pod. Each named port in a pod must have a unique
+                      name. Name for the port that can be referred to by services.
+                    type: string
+                  protocol:
+                    default: TCP
+                    description: Protocol for port. Must be UDP, TCP, or SCTP. Defaults
+                      to "TCP".
+                    type: string
+                required:
+                - containerPort
+                type: object
               version:
                 enum:
                 - v3
                 - v4
                 type: string
             required:
-            - frequency
             - version
             type: object
           status:

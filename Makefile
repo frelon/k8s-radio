@@ -145,7 +145,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: load
-load: ## Load images into kind cluster.
+load: docker-build ## Load images into kind cluster.
 	$(KIND) load docker-image ${IMG} --name=$(KIND_NAME)
 	$(KIND) load docker-image ${DP_IMG} --name=$(KIND_NAME)
 	$(KIND) load docker-image ${RTLSDR_IMAGE} --name=$(KIND_NAME)

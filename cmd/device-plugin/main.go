@@ -30,7 +30,7 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 	return &pluginapi.PreStartContainerResponse{}, nil
 }
 
-func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+func (p *Plugin) UpdateDevices() (error) {
 	rtls, err := ListDevices()
 	if err != nil {
 		glog.Infof("Error listing devices: %s", err.Error())
@@ -39,32 +39,69 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 
 	glog.Infof("Found %d devices", len(rtls))
 
-	p.RtlSdrs = make(map[string]*RtlSdrDev)
-
-	devs := make([]*pluginapi.Device, len(rtls))
+    for _, rtl := range p.RtlSdrs {
+        rtl.Connected = false
+    }
 
 	for i := range rtls {
-		devs[i] = &pluginapi.Device{
-			ID:     rtls[i].SerialNumber,
-			Health: pluginapi.Healthy,
-		}
-
 		p.RtlSdrs[rtls[i].SerialNumber] = rtls[i]
 	}
 
-	s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
+	return nil
+}
 
-	glog.Info("Sent ListAndWatchResponse")
+func (p *Plugin) GetDevices() []*pluginapi.Device {
+	devs := make([]*pluginapi.Device, len(p.RtlSdrs))
+    i := 0
+    for _, rtl := range p.RtlSdrs {
+		devs[i] = &pluginapi.Device{
+			ID:     rtl.SerialNumber,
+            Health: pluginapi.Unhealthy,
+		}
+
+        if rtl.Connected {
+            devs[i].Health = pluginapi.Healthy
+        }
+
+        i++
+    }
+
+    return devs
+}
+
+func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+
+	err := p.UpdateDevices()
+	if err != nil {
+		glog.Errorf("Error listing devices: %s", err.Error())
+	}
+
+    devs := p.GetDevices()
+
+	err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
+	if err != nil {
+		glog.Errorf("Error sending initial response: %s", err.Error())
+	}
+
+	glog.Info("Waiting for updates...")
 
 	for {
 		select {
 		case <-p.Heartbeat:
-			glog.Info("ListAndWatch heartbeat")
-			for i := 0; i < len(rtls); i++ {
-				devs[i].Health = pluginapi.Healthy
+			err = p.UpdateDevices()
+			if err != nil {
+				glog.Errorf("Error reading devices: %s", err.Error())
+				continue
 			}
 
-			s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
+            devs := p.GetDevices()
+			glog.Infof("Devices updated (len %d)", len(devs))
+
+			err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
+			if err != nil {
+				glog.Errorf("Error sending response: %s", err.Error())
+				continue
+			}
 		}
 	}
 }
@@ -116,6 +153,7 @@ func (l *Lister) Discover(pluginListCh chan dpm.PluginNameList) {
 func (l *Lister) NewPlugin(resourceLastName string) dpm.PluginInterface {
 	return &Plugin{
 		Heartbeat: l.Heartbeat,
+	    RtlSdrs: make(map[string]*RtlSdrDev),
 	}
 }
 
@@ -125,20 +163,21 @@ func main() {
 	glog.Info("Starting rtl-sdr device plugin")
 
 	l := Lister{
-		Heartbeat:     make(chan bool),
 		ResUpdateChan: make(chan dpm.PluginNameList),
+		Heartbeat:     make(chan bool),
 	}
 
-	manager := dpm.NewManager(&l)
-
+	pulse := 2
 	go func() {
-		pulse := 2
-		glog.Infof("Heartbeating every %d seconds", pulse)
+		glog.Infof("Heart beating every %d seconds", pulse)
+
 		for {
 			time.Sleep(time.Second * time.Duration(pulse))
 			l.Heartbeat <- true
 		}
 	}()
+
+	manager := dpm.NewManager(&l)
 
 	go func() {
 		l.ResUpdateChan <- []string{"rtl-sdr"}
@@ -151,6 +190,7 @@ type RtlSdrDev struct {
 	*gousb.Device
 
 	SerialNumber string
+    Connected bool
 }
 
 func (r RtlSdrDev) DevicePath() string {
@@ -163,6 +203,7 @@ func NewRtlSdrDev(dev *gousb.Device) *RtlSdrDev {
 	return &RtlSdrDev{
 		Device:       dev,
 		SerialNumber: serial,
+        Connected:    true,
 	}
 }
 
@@ -173,17 +214,19 @@ func ListDevices() ([]*RtlSdrDev, error) {
 	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		return desc.Vendor == 0x0bda
 	})
+	for i := range devs {
+		defer devs[i].Close()
+	}
+
 	if err != nil {
+		glog.Infof("Err open device (%d): %s", len(devs), err.Error())
 		return nil, err
 	}
 
 	devices := make([]*RtlSdrDev, len(devs))
-
 	for i := range devs {
-		defer devs[i].Close()
-
 		devices[i] = NewRtlSdrDev(devs[i])
 	}
 
-	return devices, err
+	return devices, nil
 }

@@ -11,8 +11,6 @@ COPY go.sum go.sum
 RUN go mod download
 
 COPY cmd/device-plugin/main.go cmd/device-plugin/main.go
-COPY api/ api/
-COPY internal/controller/ internal/controller/
 RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o device-plugin cmd/device-plugin/main.go
 
 FROM registry.opensuse.org/opensuse/tumbleweed:latest

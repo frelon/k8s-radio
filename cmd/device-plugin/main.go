@@ -30,7 +30,7 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 	return &pluginapi.PreStartContainerResponse{}, nil
 }
 
-func (p *Plugin) UpdateDevices() (error) {
+func (p *Plugin) UpdateDevices() error {
 	rtls, err := ListDevices()
 	if err != nil {
 		glog.Infof("Error listing devices: %s", err.Error())
@@ -39,9 +39,9 @@ func (p *Plugin) UpdateDevices() (error) {
 
 	glog.Infof("Found %d devices", len(rtls))
 
-    for _, rtl := range p.RtlSdrs {
-        rtl.Connected = false
-    }
+	for _, rtl := range p.RtlSdrs {
+		rtl.Connected = false
+	}
 
 	for i := range rtls {
 		p.RtlSdrs[rtls[i].SerialNumber] = rtls[i]
@@ -52,21 +52,21 @@ func (p *Plugin) UpdateDevices() (error) {
 
 func (p *Plugin) GetDevices() []*pluginapi.Device {
 	devs := make([]*pluginapi.Device, len(p.RtlSdrs))
-    i := 0
-    for _, rtl := range p.RtlSdrs {
+	i := 0
+	for _, rtl := range p.RtlSdrs {
 		devs[i] = &pluginapi.Device{
 			ID:     rtl.SerialNumber,
-            Health: pluginapi.Unhealthy,
+			Health: pluginapi.Unhealthy,
 		}
 
-        if rtl.Connected {
-            devs[i].Health = pluginapi.Healthy
-        }
+		if rtl.Connected {
+			devs[i].Health = pluginapi.Healthy
+		}
 
-        i++
-    }
+		i++
+	}
 
-    return devs
+	return devs
 }
 
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
@@ -76,7 +76,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 		glog.Errorf("Error listing devices: %s", err.Error())
 	}
 
-    devs := p.GetDevices()
+	devs := p.GetDevices()
 
 	err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 	if err != nil {
@@ -94,7 +94,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 				continue
 			}
 
-            devs := p.GetDevices()
+			devs := p.GetDevices()
 			glog.Infof("Devices updated (len %d)", len(devs))
 
 			err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
@@ -153,7 +153,7 @@ func (l *Lister) Discover(pluginListCh chan dpm.PluginNameList) {
 func (l *Lister) NewPlugin(resourceLastName string) dpm.PluginInterface {
 	return &Plugin{
 		Heartbeat: l.Heartbeat,
-	    RtlSdrs: make(map[string]*RtlSdrDev),
+		RtlSdrs:   make(map[string]*RtlSdrDev),
 	}
 }
 
@@ -190,7 +190,7 @@ type RtlSdrDev struct {
 	*gousb.Device
 
 	SerialNumber string
-    Connected bool
+	Connected    bool
 }
 
 func (r RtlSdrDev) DevicePath() string {
@@ -203,7 +203,7 @@ func NewRtlSdrDev(dev *gousb.Device) *RtlSdrDev {
 	return &RtlSdrDev{
 		Device:       dev,
 		SerialNumber: serial,
-        Connected:    true,
+		Connected:    true,
 	}
 }
 

@@ -9,6 +9,23 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: install libusb-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libusb-1.0-0-dev
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+
   build:
     name: build binaries
     runs-on: ubuntu-latest
@@ -20,10 +37,6 @@ jobs:
       - name: install libusb
         run: |
           sudo apt-get update
-          sudo apt-get install libusb-1.0-0 libusb-1.0-0-dev
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.54
+          sudo apt-get install libusb-1.0-0
       - name: build
         run: make build

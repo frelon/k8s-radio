@@ -20,7 +20,7 @@ jobs:
       - name: install libusb
         run: |
           sudo apt-get update
-          sudo apt-get install libusb-1.0-0
+          sudo apt-get install libusb-1.0-0 libusb-dev
       - name: download modules
         run: go mod download
       - name: golangci-lint

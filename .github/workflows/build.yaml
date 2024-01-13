@@ -21,6 +21,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libusb-1.0-0
+      - name: download modules
+        run: go mod download
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:

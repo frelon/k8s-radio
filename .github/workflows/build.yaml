@@ -20,7 +20,7 @@ jobs:
       - name: install libusb
         run: |
           sudo apt-get update
-          sudo apt-get install libusb-1.0-0 libusb-dev
+          sudo apt-get install libusb-1.0-0 libusb-1.0-0-dev
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:

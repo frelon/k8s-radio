@@ -85,25 +85,24 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 
 	glog.Info("Waiting for updates...")
 
-	for {
-		select {
-		case <-p.Heartbeat:
-			err = p.UpdateDevices()
-			if err != nil {
-				glog.Errorf("Error reading devices: %s", err.Error())
-				continue
-			}
+	for range p.Heartbeat {
+		err = p.UpdateDevices()
+		if err != nil {
+			glog.Errorf("Error reading devices: %s", err.Error())
+			continue
+		}
 
-			devs := p.GetDevices()
-			glog.Infof("Devices updated (len %d)", len(devs))
+		devs := p.GetDevices()
+		glog.Infof("Devices updated (len %d)", len(devs))
 
-			err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
-			if err != nil {
-				glog.Errorf("Error sending response: %s", err.Error())
-				continue
-			}
+		err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
+		if err != nil {
+			glog.Errorf("Error sending response: %s", err.Error())
+			continue
 		}
 	}
+
+	return nil
 }
 
 func (p *Plugin) GetPreferredAllocation(context.Context, *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
@@ -209,13 +208,17 @@ func NewRtlSdrDev(dev *gousb.Device) *RtlSdrDev {
 
 func ListDevices() ([]*RtlSdrDev, error) {
 	ctx := gousb.NewContext()
-	defer ctx.Close()
+	defer func() {
+		_ = ctx.Close()
+	}()
 
 	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		return desc.Vendor == 0x0bda
 	})
 	for i := range devs {
-		defer devs[i].Close()
+		defer func(i int) {
+			_ = devs[i].Close()
+		}(i)
 	}
 
 	if err != nil {

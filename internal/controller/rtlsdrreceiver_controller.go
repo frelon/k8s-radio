@@ -54,12 +54,13 @@ type RtlSdrReceiverReconciler struct {
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("name", req.NamespacedName.String())
+	logger.Info("Reconciling RtlSdrReceiver")
 
 	receiver := &radiov1beta1.RtlSdrReceiver{}
 	if err := r.Get(ctx, req.NamespacedName, receiver); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info("Object was not found, not an error")
+			logger.Info("Object was not found, not an error")
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get seedimage object: %w", err)
@@ -72,7 +73,7 @@ func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return reconcile.Result{}, err
 		}
 
-		logger.V(5).Info("Pod not found, creating it...")
+		logger.Info("Pod not found, creating it...")
 
 		err = r.createPod(ctx, receiver)
 		if err != nil {
@@ -80,7 +81,7 @@ func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	logger.V(5).Info("Reconcile successful.")
+	logger.Info("Reconcile successful.")
 
 	return reconcile.Result{}, nil
 }

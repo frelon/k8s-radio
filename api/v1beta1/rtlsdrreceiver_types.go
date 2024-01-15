@@ -46,8 +46,8 @@ type RtlSdrReceiverSpec struct {
 type RtlSdrVersion string
 
 const (
-	V3 = "v3"
-	V4 = "v4"
+	V3 RtlSdrVersion = "v3"
+	V4 RtlSdrVersion = "v4"
 )
 
 // RtlSdrReceiverStatus defines the observed state of RtlSdrReceiver
@@ -55,7 +55,24 @@ type RtlSdrReceiverStatus struct {
 	// Conditions describe the state of the receiver.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+
+	// State describes the current state of the receiver.
+	// +optional
+	State RtlSdrReceiverState `json:"state"`
+
+	// Pod is a reference to the underlying pod.
+	// +optional
+	Pod *corev1.ObjectReference `json:"pod,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=Waiting;Running;Failed
+type RtlSdrReceiverState string
+
+const (
+	StateWaiting RtlSdrReceiverState = "Waiting"
+	StateRunning RtlSdrReceiverState = "Running"
+	StateFailed  RtlSdrReceiverState = "Failed"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

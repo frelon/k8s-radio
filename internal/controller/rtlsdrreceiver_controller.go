@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -73,16 +74,38 @@ func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return reconcile.Result{}, err
 		}
 
+		receiver.Status.State = radiov1beta1.StateWaiting
+
 		logger.Info("Pod not found, creating it...")
 
 		err = r.createPod(ctx, receiver)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+	} else {
+		// Already running, update state based on pod Phase
+		switch pod.Status.Phase {
+		case corev1.PodRunning:
+			receiver.Status.State = radiov1beta1.StateRunning
+		case corev1.PodFailed:
+			receiver.Status.State = radiov1beta1.StateFailed
+		}
+	}
+
+	podRef, err := ref.GetReference(r.Scheme, pod)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	receiver.Status.Pod = podRef
+
+	logger.Info("Updating status")
+	if err := r.Status().Update(ctx, receiver); err != nil {
+		logger.Error(err, "Error updating RtlSdrReceiver status")
+		return ctrl.Result{}, err
 	}
 
 	logger.Info("Reconcile successful.")
-
 	return reconcile.Result{}, nil
 }
 
@@ -135,8 +158,32 @@ func (r *RtlSdrReceiverReconciler) createPod(ctx context.Context, receiver *radi
 	return r.Create(ctx, pod)
 }
 
+var (
+	jobOwnerKey = ".metadata.controller"
+	apiGVStr    = radiov1beta1.GroupVersion.String()
+)
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *RtlSdrReceiverReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, jobOwnerKey, func(rawObj client.Object) []string {
+		// grab the pod object, extract the owner...
+		pod := rawObj.(*corev1.Pod)
+		owner := metav1.GetControllerOf(pod)
+		if owner == nil {
+			return nil
+		}
+
+		// ...make sure it's a RtlSdrReceiver...
+		if owner.APIVersion != apiGVStr || owner.Kind != "RtlSdrReceiver" {
+			return nil
+		}
+
+		// ...and if so, return it
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&radiov1beta1.RtlSdrReceiver{}).
 		Owns(&corev1.Pod{}).

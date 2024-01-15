@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,10 +16,6 @@ var _ = Describe("RtlSdrReceiver controller", func() {
 	const (
 		ReceiverName      = "test-receiver"
 		ReceiverNamespace = "default"
-
-		timeout  = time.Second * 10
-		duration = time.Second * 10
-		interval = time.Millisecond * 250
 	)
 
 	Context("When updating RtlSdrReceiver Status", func() {

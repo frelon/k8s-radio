@@ -12,10 +12,10 @@ RUN go mod download
 
 COPY cmd/device-plugin/main.go cmd/device-plugin/main.go
 COPY device-plugin device-plugin
-RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o device-plugin cmd/device-plugin/main.go
+RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o deviceplugin cmd/device-plugin/main.go
 
 FROM registry.opensuse.org/opensuse/tumbleweed:latest
 RUN zypper --non-interactive install --no-recommends libusb-1_0-0
 WORKDIR /root
-COPY --from=builder /workspace/device-plugin .
-ENTRYPOINT ["./device-plugin", "-logtostderr=true", "-stderrthreshold=INFO", "-v=5"]
+COPY --from=builder /workspace/deviceplugin .
+ENTRYPOINT ["./deviceplugin", "-logtostderr=true", "-stderrthreshold=INFO", "-v=5"]

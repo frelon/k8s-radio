@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM registry.opensuse.org/opensuse/tumbleweed as builder
+FROM registry.opensuse.org/opensuse/tumbleweed:latest AS builder
 ARG TARGETOS
 ARG TARGETARCH
 

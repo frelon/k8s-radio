@@ -97,9 +97,9 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} .
-	$(CONTAINER_TOOL) build -t ${DP_IMG} -f Dockerfile.device-plugin .
-	$(CONTAINER_TOOL) build -t ${RTLSDR_IMAGE} -f Dockerfile.rtl-sdr .
+	$(CONTAINER_TOOL) build --load -t ${IMG} .
+	$(CONTAINER_TOOL) build --load -t ${DP_IMG} -f Dockerfile.device-plugin .
+	$(CONTAINER_TOOL) build --load -t ${RTLSDR_IMAGE} -f Dockerfile.rtl-sdr .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

@@ -50,6 +50,7 @@ type RtlSdrReceiverReconciler struct {
 	Image string
 }
 
+// Reconcile reconsiles the resources.
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/finalizers,verbs=update
@@ -164,8 +165,8 @@ var (
 )
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RtlSdrReceiverReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, jobOwnerKey, func(rawObj client.Object) []string {
+func (r *RtlSdrReceiverReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, jobOwnerKey, func(rawObj client.Object) []string {
 		// grab the pod object, extract the owner...
 		pod := rawObj.(*corev1.Pod)
 		owner := metav1.GetControllerOf(pod)

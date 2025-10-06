@@ -42,6 +42,7 @@ type RtlSdrReceiverSpec struct {
 	ContainerPort *corev1.ContainerPort `json:"port"`
 }
 
+// RtlSdrVersion is the major version of the rtl-sdr receiver.
 // +kubebuilder:validation:Enum=v3;v4
 type RtlSdrVersion string
 
@@ -65,6 +66,7 @@ type RtlSdrReceiverStatus struct {
 	Pod *corev1.ObjectReference `json:"pod,omitempty"`
 }
 
+// RtlSdrReceiverState state of the rtl-sdr receiver.
 // +kubebuilder:validation:Enum=Waiting;Running;Failed
 type RtlSdrReceiverState string
 

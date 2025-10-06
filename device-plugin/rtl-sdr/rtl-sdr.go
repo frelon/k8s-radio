@@ -66,7 +66,6 @@ func (p *Plugin) GetDevices() []*pluginapi.Device {
 }
 
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-
 	err := p.UpdateDevices()
 	if err != nil {
 		glog.Errorf("Error listing devices: %s", err.Error())

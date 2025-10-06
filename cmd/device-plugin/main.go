@@ -4,9 +4,10 @@ import (
 	"flag"
 	"time"
 
-	rtlsdr "github.com/frelon/k8s-radio/device-plugin/rtl-sdr"
 	"github.com/golang/glog"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+
+	rtlsdr "github.com/frelon/k8s-radio/device-plugin/rtl-sdr"
 )
 
 type RadioDeviceLister struct {
@@ -30,8 +31,7 @@ func (l *RadioDeviceLister) Discover(pluginListCh chan dpm.PluginNameList) {
 }
 
 func (l *RadioDeviceLister) NewPlugin(resourceLastName string) dpm.PluginInterface {
-	switch resourceLastName {
-	case rtlsdr.ResourceName:
+	if resourceLastName == rtlsdr.ResourceName {
 		return &rtlsdr.Plugin{
 			Heartbeat: l.Heartbeat,
 			RtlSdrs:   make(map[string]*rtlsdr.RtlSdrDev),

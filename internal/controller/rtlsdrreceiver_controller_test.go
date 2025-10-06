@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -33,10 +32,9 @@ var _ = Describe("RtlSdrReceiver controller", func() {
 	utilruntime.Must(radiov1.AddToScheme(scheme))
 
 	Context("When updating RtlSdrReceiver Status", func() {
-		It("Should successfully create a new RtlSdrReceiver", func() {
+		It("Should successfully create a new RtlSdrReceiver", func(ctx SpecContext) {
 			By("By creating a new RtlSdrReceiver")
 
-			ctx := context.Background()
 			freq, err := resource.ParseQuantity("101.9M")
 			Expect(err).To(Succeed())
 

@@ -1,39 +1,137 @@
+version: "2"
 run:
-  deadline: 5m
+  go: "1.24"
+  timeout: 10m
+  modules-download-mode: readonly
   allow-parallel-runners: true
-
-issues:
-  # don't skip warning about doc comments
-  # don't exclude the default set of lint
-  exclude-use-default: false
-  # restore some of the defaults
-  # (fill in the rest as needed)
-  exclude-rules:
-    - path: "api/*"
-      linters:
-        - lll
-    - path: "internal/*"
-      linters:
-        - dupl
-        - lll
 linters:
-  disable-all: true
+  # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml
+  default: none
   enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - dogsled
     - dupl
     - errcheck
-    - exportloopref
+    - errchkjson
+    - errorlint
+    - forbidigo
+    - ginkgolinter
     - goconst
+    - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - gosimple
+    - godoclint
+    - goprintffuncname
     - govet
+    - importas
     - ineffassign
+    - iotamixing
+    - makezero
     - misspell
     - nakedret
+    - nilerr
+    - nolintlint
     - prealloc
+    - revive
     - staticcheck
-    - typecheck
+    - tagliatelle
     - unconvert
     - unparam
     - unused
+    - whitespace
+  settings:
+    forbidigo:
+        forbid:
+          - pattern: context.Background
+            msg: Use ginkgos SpecContext or go testings t.Context instead
+          - pattern: context.TODO
+            msg: Use ginkgos SpecContext or go testings t.Context instead
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      enable-all: true
+    importas:
+      no-unaliased: true
+    revive:
+      # By default, revive will enable only the linting rules that are named in the configuration file.
+      # So, it's needed to explicitly enable all required rules here.
+      rules:
+        # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        #
+        # Rules in addition to the recommended configuration above.
+        #
+        - name: bool-literal-in-expr
+        - name: constant-logical-expr
+  exclusions:
+    generated: strict
+    paths:
+      - zz_generated.*\.go$
+      - .*conversion.*\.go$
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # Dot imports for gomega and ginkgo are allowed
+      # within test files.
+      - linters:
+          - revive
+        path: _test\.go
+        text: should not use dot imports
+      # Ignore error type switch case
+      - linters:
+          - errorlint
+        path: pkg/loader/loader.go
+      # Ignore test files
+      - linters:
+          - dupl
+          - ginkgolinter
+        path: _test\.go
+      - linters:
+          - gocritic
+        path: pkg/markers/help.go
+      - linters:
+          - exhaustive
+        path: pkg/markers/parse.go|pkg/deepcopy/traverse.go|pkg/genall/help/types.go|pkg/crd/schema.go|pkg/crd/flatten.go
+      # Ignore consider pre-allocating variables
+      - linters:
+          - prealloc
+        text: Consider pre-allocating
+      - linters:
+          - staticcheck
+        path: (.+)\.go$
+        text: (QF1008)
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: strict
+    paths:
+      - zz_generated.*\.go$
+      - .*conversion.*\.go$

@@ -89,7 +89,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	image, found := os.LookupEnv("RTLSDR_IMAGE")
+	image, found := os.LookupEnv("RTLSDR_IMG")
 	if !found {
 		setupLog.Info("using default RTL-SDR image")
 		image = controller.RtlSdrDefaultImage

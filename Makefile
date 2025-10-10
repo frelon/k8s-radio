@@ -2,7 +2,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:dev
 DP_IMG ?= device-plugin:dev
-RTLSDR_IMAGE ?= rtl-sdr:dev
+RTLSDR_IMG ?= rtl-sdr:dev
 
 KIND_NAME ?= kind-radio
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -99,11 +99,13 @@ run: manifests generate fmt vet ## Run a controller from your host.
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --load -t ${IMG} .
 	$(CONTAINER_TOOL) build --load -t ${DP_IMG} -f Dockerfile.device-plugin .
-	$(CONTAINER_TOOL) build --load -t ${RTLSDR_IMAGE} -f Dockerfile.rtl-sdr .
+	$(CONTAINER_TOOL) build --load -t ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
+	$(CONTAINER_TOOL) push ${DP_IMG}
+	$(CONTAINER_TOOL) push ${RTLSDR_IMG}
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
@@ -118,7 +120,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	$(CONTAINER_TOOL) buildx use project-v3-builder
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${DP_IMG} -f Dockerfile.device-plugin .
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${RTLSDR_IMAGE} -f Dockerfile.rtl-sdr .
+	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 
 ##@ Deployment
@@ -143,11 +145,11 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 load: docker-build ## Load images into kind cluster.
 	$(KIND) load docker-image ${IMG} --name=$(KIND_NAME)
 	$(KIND) load docker-image ${DP_IMG} --name=$(KIND_NAME)
-	$(KIND) load docker-image ${RTLSDR_IMAGE} --name=$(KIND_NAME)
+	$(KIND) load docker-image ${RTLSDR_IMG} --name=$(KIND_NAME)
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	@echo "RTLSDR_IMAGE=${RTLSDR_IMAGE}" > config/manager/.env
+	@echo "RTLSDR_IMG=${RTLSDR_IMG}" > config/manager/.env
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	cd config/device-plugin && $(KUSTOMIZE) edit set image device-plugin=${DP_IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -

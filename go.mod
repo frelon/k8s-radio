@@ -3,7 +3,6 @@ module github.com/frelon/k8s-radio
 go 1.25
 
 require (
-	github.com/golang/glog v1.2.5
 	github.com/google/gousb v1.1.2
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/onsi/ginkgo/v2 v2.11.0
@@ -29,6 +28,7 @@ require (
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/glog v1.2.5 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect

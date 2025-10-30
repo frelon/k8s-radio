@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"log/slog"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 
 	rtlsdr "github.com/frelon/k8s-radio/device-plugin/rtl-sdr"
@@ -38,14 +38,14 @@ func (l *RadioDeviceLister) NewPlugin(resourceLastName string) dpm.PluginInterfa
 		}
 	}
 
-	glog.Errorf("Unknown resource name: '%s'", resourceLastName)
+	slog.Error("Unknown resource", "name", resourceLastName)
 	return nil
 }
 
 func main() {
 	flag.Parse()
 
-	glog.Info("Starting radio device plugin")
+	slog.Info("Starting radio device plugin")
 
 	l := RadioDeviceLister{
 		ResUpdateChan: make(chan dpm.PluginNameList),
@@ -54,7 +54,7 @@ func main() {
 
 	pulse := 2
 	go func() {
-		glog.Infof("Heart beating every %d seconds", pulse)
+		slog.Info("Heartbeat", "pulse", pulse)
 
 		for {
 			time.Sleep(time.Second * time.Duration(pulse))

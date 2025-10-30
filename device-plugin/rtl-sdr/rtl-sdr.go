@@ -3,8 +3,8 @@ package rtlsdr
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/golang/glog"
 	"github.com/google/gousb"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
@@ -29,11 +29,11 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 func (p *Plugin) UpdateDevices() error {
 	rtls, err := ListDevices()
 	if err != nil {
-		glog.Infof("Error listing devices: %s", err.Error())
+		slog.Info("Error listing devices", slog.Any("error", err))
 		return err
 	}
 
-	glog.Infof("Found %d devices", len(rtls))
+	slog.Info("Found devices", "len", len(rtls))
 
 	for _, rtl := range p.RtlSdrs {
 		rtl.Connected = false
@@ -68,31 +68,31 @@ func (p *Plugin) GetDevices() []*pluginapi.Device {
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	err := p.UpdateDevices()
 	if err != nil {
-		glog.Errorf("Error listing devices: %s", err.Error())
+		slog.Error("Error listing devices", slog.Any("error", err))
 	}
 
 	devs := p.GetDevices()
 
 	err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 	if err != nil {
-		glog.Errorf("Error sending initial response: %s", err.Error())
+		slog.Error("Error sending initial response", slog.Any("error", err))
 	}
 
-	glog.Info("Waiting for updates...")
+	slog.Info("Waiting for updates...")
 
 	for range p.Heartbeat {
 		err = p.UpdateDevices()
 		if err != nil {
-			glog.Errorf("Error reading devices: %s", err.Error())
+			slog.Error("Error reading devices", slog.Any("error", err))
 			continue
 		}
 
 		devs := p.GetDevices()
-		glog.Infof("Devices updated (len %d)", len(devs))
+		slog.Info("Devices updated", "len", len(devs))
 
 		err = s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 		if err != nil {
-			glog.Errorf("Error sending response: %s", err.Error())
+			slog.Error("Error sending response", slog.Any("error", err))
 			continue
 		}
 	}
@@ -117,7 +117,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		car.Devices = append(car.Devices, dev)
 
 		for _, id := range req.DevicesIDs {
-			glog.Infof("Allocating device ID: %s", id)
+			slog.Info("Allocating device", slog.String("ID", id))
 
 			dev.HostPath = p.RtlSdrs[id].DevicePath()
 			dev.ContainerPath = p.RtlSdrs[id].DevicePath()
@@ -166,7 +166,7 @@ func ListDevices() ([]*RtlSdrDev, error) {
 	}
 
 	if err != nil {
-		glog.Infof("Err open device (%d): %s", len(devs), err.Error())
+		slog.Info("Error open device", slog.Int("len", len(devs)), slog.Any("error", err))
 		return nil, err
 	}
 

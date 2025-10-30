@@ -84,6 +84,7 @@ spec:
                 - containerPort
                 type: object
               version:
+                description: RtlSdrVersion is the major version of the rtl-sdr receiver.
                 enum:
                 - v3
                 - v4

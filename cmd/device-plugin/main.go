@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
@@ -32,10 +33,7 @@ func (l *RadioDeviceLister) Discover(pluginListCh chan dpm.PluginNameList) {
 
 func (l *RadioDeviceLister) NewPlugin(resourceLastName string) dpm.PluginInterface {
 	if resourceLastName == rtlsdr.ResourceName {
-		return &rtlsdr.Plugin{
-			Heartbeat: l.Heartbeat,
-			RtlSdrs:   make(map[string]*rtlsdr.RtlSdrDev),
-		}
+		return rtlsdr.NewPlugin(l.Heartbeat, os.DirFS("/"))
 	}
 
 	slog.Error("Unknown resource", "name", resourceLastName)

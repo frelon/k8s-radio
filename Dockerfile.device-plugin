@@ -1,9 +1,8 @@
 # Build the manager binary
-FROM registry.opensuse.org/opensuse/tumbleweed:latest AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN zypper --non-interactive install --no-recommends go libusb-1_0-devel
 WORKDIR /workspace
 
 COPY go.mod go.mod
@@ -12,10 +11,10 @@ RUN go mod download
 
 COPY cmd/device-plugin/main.go cmd/device-plugin/main.go
 COPY device-plugin device-plugin
-RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o deviceplugin cmd/device-plugin/main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o deviceplugin cmd/device-plugin/main.go
 
-FROM registry.opensuse.org/opensuse/tumbleweed:latest
-RUN zypper --non-interactive install --no-recommends libusb-1_0-0
-WORKDIR /root
+FROM gcr.io/distroless/static:latest
+WORKDIR /
 COPY --from=builder /workspace/deviceplugin .
+
 ENTRYPOINT ["./deviceplugin", "-logtostderr=true", "-stderrthreshold=INFO", "-v=5"]

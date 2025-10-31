@@ -3,7 +3,6 @@ module github.com/frelon/k8s-radio
 go 1.25
 
 require (
-	github.com/google/gousb v1.1.2
 	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10

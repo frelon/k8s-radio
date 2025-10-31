@@ -12,29 +12,29 @@ const (
 	ResourceName = "rtl-sdr"
 )
 
-type plugin struct {
+type Plugin struct {
 	devices   map[string]*UsbDevice
 	heartbeat chan bool
 	fsys      fs.FS
 }
 
-func NewPlugin(heartbeat chan bool, fsys fs.FS) *plugin {
-	return &plugin{
+func NewPlugin(heartbeat chan bool, fsys fs.FS) *Plugin {
+	return &Plugin{
 		heartbeat: heartbeat,
 		fsys:      fsys,
 		devices:   make(map[string]*UsbDevice),
 	}
 }
 
-func (p *plugin) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
+func (p *Plugin) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return &pluginapi.DevicePluginOptions{}, nil
 }
 
-func (p *plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
+func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	return &pluginapi.PreStartContainerResponse{}, nil
 }
 
-func (p *plugin) UpdateDevices() ([]*pluginapi.Device, error) {
+func (p *Plugin) UpdateDevices() ([]*pluginapi.Device, error) {
 	connectedDevs, err := ListUsbDevices(p.fsys)
 	if err != nil {
 		slog.Info("Error listing devices", slog.Any("error", err))
@@ -67,7 +67,7 @@ func (p *plugin) UpdateDevices() ([]*pluginapi.Device, error) {
 	return pdevs, nil
 }
 
-func (p *plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	devs, err := p.UpdateDevices()
 	if err != nil {
 		slog.Error("Error listing devices", slog.Any("error", err))
@@ -99,11 +99,11 @@ func (p *plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 	return nil
 }
 
-func (p *plugin) GetPreferredAllocation(context.Context, *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+func (p *Plugin) GetPreferredAllocation(context.Context, *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
 	return &pluginapi.PreferredAllocationResponse{}, nil
 }
 
-func (p *plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 	var car pluginapi.ContainerAllocateResponse
 	var dev *pluginapi.DeviceSpec

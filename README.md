@@ -14,7 +14,7 @@ This will:
 ```
 make cluster
 make docker-build
-make load
+make cluster-load
 make deploy
 ```
 

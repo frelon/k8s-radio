@@ -17,10 +17,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: install libusb-dev
-        run: |
-          sudo apt-get update
-          sudo apt-get install libusb-1.0-0-dev
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
@@ -34,10 +30,6 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: install libusb
-        run: |
-          sudo apt-get update
-          sudo apt-get install libusb-1.0-0-dev
       - name: build
         run: make build
 
@@ -57,9 +49,5 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - name: install libusb
-        run: |
-          sudo apt-get update
-          sudo apt-get install libusb-1.0-0-dev
       - name: test
         run: make test

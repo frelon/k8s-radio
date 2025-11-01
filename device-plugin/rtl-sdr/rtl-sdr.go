@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log/slog"
 
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -13,10 +14,14 @@ const (
 )
 
 type Plugin struct {
+	pluginapi.UnimplementedDevicePluginServer
+
 	devices   map[string]*UsbDevice
 	heartbeat chan bool
 	fsys      fs.FS
 }
+
+var _ dpm.PluginInterface = (*Plugin)(nil)
 
 func NewPlugin(heartbeat chan bool, fsys fs.FS) *Plugin {
 	return &Plugin{
@@ -115,7 +120,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		dev.Permissions = "rw"
 		car.Devices = append(car.Devices, dev)
 
-		for _, id := range req.DevicesIDs {
+		for _, id := range req.DevicesIds {
 			slog.Info("Allocating device", slog.String("ID", id))
 
 			dev.HostPath = p.devices[id].DevicePath()

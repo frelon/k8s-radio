@@ -1,6 +1,5 @@
 FROM registry.opensuse.org/opensuse/tumbleweed:latest AS build
 
-RUN 
 RUN mkdir /sysroot && \
     zypper --gpg-auto-import-keys --installroot /sysroot refresh && \
     zypper --non-interactive --installroot /sysroot install -y rtl-sdr

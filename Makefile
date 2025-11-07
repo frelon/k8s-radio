@@ -3,6 +3,7 @@
 IMG ?= controller:dev
 DP_IMG ?= device-plugin:dev
 RTLSDR_IMG ?= rtl-sdr:dev
+FM_IMG ?= fm-streamer:dev
 
 KIND_NAME ?= kind-radio
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -100,6 +101,7 @@ docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --load -t ${IMG} .
 	$(CONTAINER_TOOL) build --load -t ${DP_IMG} -f Dockerfile.device-plugin .
 	$(CONTAINER_TOOL) build --load -t ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
+	$(CONTAINER_TOOL) build --load -t ${FM_IMG} -f Dockerfile.fm-streamer .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

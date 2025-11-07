@@ -1,0 +1,16 @@
+[package]
+name = "fm-streamer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.51", features = ["derive"] }
+ctrlc = "3.5.1"
+log = "0.4.28"
+num-complex = "0.4.6"
+rtl-sdr-rs = "0.2.1"
+stderrlog = "0.5"
+
+
+[dev-dependencies]
+stderrlog = "0.5"

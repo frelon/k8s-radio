@@ -26,3 +26,8 @@ Dockerfile.cross
 *~
 
 .env
+
+
+# Added by cargo
+
+/target

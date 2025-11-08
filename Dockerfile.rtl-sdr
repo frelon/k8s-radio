@@ -5,4 +5,5 @@ RUN mkdir /sysroot && \
     zypper --non-interactive --installroot /sysroot install -y rtl-sdr
 
 FROM scratch AS final
+USER 65532:65532
 COPY --from=build /sysroot /

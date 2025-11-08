@@ -37,14 +37,9 @@ spec:
         volumeMounts:
         - name: dp
           mountPath: /var/lib/kubelet/device-plugins
-        - name: dev
-          mountPath: /dev
       serviceAccountName: device-plugin
       terminationGracePeriodSeconds: 10
       volumes:
         - name: dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
-        - name: dev
-          hostPath:
-            path: /dev

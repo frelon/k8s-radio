@@ -127,6 +127,9 @@ func (r *RtlSdrReceiverReconciler) createPod(ctx context.Context, receiver *radi
 
 	args = append(args, "-p", strconv.Itoa(listenPort))
 
+	t := true
+	userID := int64(65532)
+
 	pod.Name = receiver.Name
 	pod.Namespace = receiver.Namespace
 	pod.Spec = corev1.PodSpec{
@@ -141,6 +144,11 @@ func (r *RtlSdrReceiverReconciler) createPod(ctx context.Context, receiver *radi
 					Limits: corev1.ResourceList{
 						RtlSdrResourceName: *resource.NewQuantity(1, resource.DecimalSI),
 					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot:           &t,
+					ReadOnlyRootFilesystem: &t,
+					RunAsUser:              &userID,
 				},
 			},
 		},

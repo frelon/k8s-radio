@@ -1,14 +1,10 @@
 // Based on the simple_fm example from https://github.com/ccostes/rtl-sdr-rs/
 
 use clap::Parser;
-use core::alloc::Layout;
-use ctrlc;
 use log::info;
 use num_complex::Complex;
 use rtl_sdr_rs::{error::Result, DeviceId, RtlSdr, DEFAULT_BUF_LENGTH};
 use std::f64::consts::PI;
-use std::fs::File;
-use std::os::fd::AsRawFd;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -26,15 +22,13 @@ struct Args {
 }
 
 // Radio and demodulation config
-const FREQUENCY: u32 = 101_900_000; // Frequency in Hz
 const SAMPLE_RATE: u32 = 170_000; // Demodulation sample rate, 170kHz
 const RATE_RESAMPLE: u32 = 32_000; // Output sample rate, 32kHz
 
-// RTL Device Index
-const RTL_INDEX: usize = 0;
-
 fn main() {
     let args = Args::parse();
+
+    let frequency = parse_frequency(args.frequency);
 
     // Printing to stdout will break audio output, so use this to log to stderr instead
     stderrlog::new().verbosity(log::Level::Info).init().unwrap();
@@ -47,7 +41,7 @@ fn main() {
     .unwrap();
 
     // Get radio and demodulation settings for given frequency and sample rate
-    let (radio_config, demod_config) = optimal_settings(FREQUENCY, SAMPLE_RATE);
+    let (radio_config, demod_config) = optimal_settings(frequency, SAMPLE_RATE);
 
     // Channel to pass receive data from receiver thread to processor thread
     let (tx, rx) = mpsc::channel();
@@ -60,6 +54,24 @@ fn main() {
     // Wait for threads to finish
     process_thread.join().unwrap();
     receive_thread.join().unwrap();
+}
+
+fn parse_frequency(frequency: String) -> u32 {
+    let suffix = frequency.chars().last().unwrap();
+    let stripped = frequency.strip_suffix(['G', 'g', 'M', 'm', 'K', 'k']);
+
+    match suffix {
+        'G' | 'g' => {
+            (stripped.unwrap().parse::<f32>().unwrap() * 1_000_000_000.0) as u32
+        },
+        'M' | 'm' => {
+            (stripped.unwrap().parse::<f32>().unwrap() * 1_000_000.0) as u32
+        },
+        'K' | 'k' => {
+            (stripped.unwrap().parse::<f32>().unwrap() * 1_000.0) as u32
+        },
+        _ => frequency.parse().unwrap(),
+    }
 }
 
 /// Thread to open SDR device and send received data to the demod thread until
@@ -103,7 +115,7 @@ fn receive(shutdown: &AtomicBool, radio_config: RadioConfig, tx: Sender<Vec<u8>>
             break;
         }
         // Send received data through the channel to the processor thread
-        tx.send(buf.to_vec());
+        let _ = tx.send(buf.to_vec());
     }
     // Shut down the device and exit
     info!("Close");
@@ -179,15 +191,15 @@ fn optimal_settings(freq: u32, rate: u32) -> (RadioConfig, DemodConfig) {
     }
     (
         RadioConfig {
-            capture_freq: capture_freq,
-            capture_rate: capture_rate,
+            capture_freq,
+            capture_rate,
         },
         DemodConfig {
             rate_in: SAMPLE_RATE,
             rate_out: SAMPLE_RATE,
             rate_resample: RATE_RESAMPLE,
-            downsample: downsample,
-            output_scale: output_scale,
+            downsample,
+            output_scale,
         },
     )
 }
@@ -221,7 +233,7 @@ struct Demod {
 impl Demod {
     fn new(config: DemodConfig) -> Self {
         Demod {
-            config: config,
+            config,
             prev_index: 0,
             now_lpr: 0,
             prev_lpr_index: 0,
@@ -243,8 +255,7 @@ impl Demod {
         let demodulated = self.fm_demod(lowpassed);
 
         // Resample and return result
-        let output = self.low_pass_real(demodulated);
-        output
+        self.low_pass_real(demodulated)
     }
 
     /// Performs a 90-degree rotation in the complex plane on a vector of bytes
@@ -273,8 +284,8 @@ impl Demod {
     /// Applies a low-pass filter on a vector of complex values
     fn low_pass_complex(&mut self, buf: Vec<Complex<i32>>) -> Vec<Complex<i32>> {
         let mut res = vec![];
-        for orig in 0..buf.len() {
-            self.lp_now += buf[orig];
+        for i in &buf {
+            self.lp_now += i;
 
             self.prev_index += 1;
             if self.prev_index < self.config.downsample as usize {
@@ -325,20 +336,19 @@ impl Demod {
         if x == 0 && y == 0 {
             return 0;
         }
-        let mut yabs = y;
-        if yabs < 0 {
-            yabs = -yabs;
-        }
-        let angle;
-        if x >= 0 {
-            angle = pi4 - (pi4 as i64 * (x - yabs) as i64) as i32 / (x + yabs);
+        let yabs = y.abs();
+
+        let angle = if x >= 0 {
+            pi4 - (pi4 as i64 * (x - yabs) as i64) as i32 / (x + yabs)
         } else {
-            angle = pi34 - (pi4 as i64 * (x + yabs) as i64) as i32 / (yabs - x);
-        }
+            pi34 - (pi4 as i64 * (x + yabs) as i64) as i32 / (yabs - x)
+        };
+
         if y < 0 {
             return -angle;
         }
-        return angle;
+
+        angle
     }
 
     /// Applies a low-pass filter to a vector of real-valued data
@@ -370,8 +380,8 @@ fn output(buf: Vec<i16>) {
     let slice_u8: &[u8] = unsafe {
         slice::from_raw_parts(buf.as_ptr() as *const u8, buf.len() * mem::size_of::<i16>())
     };
-    out.write_all(slice_u8);
-    out.flush();
+    let _ = out.write_all(slice_u8);
+    let _ = out.flush();
 }
 
 /// Convert a vector of i16 complex components (real and imaginary) to a vector of i32 Complex values
@@ -389,6 +399,24 @@ fn buf_to_complex(buf: Vec<i16>) -> Vec<Complex<i32>> {
 mod tests {
     use super::*;
     #[test]
+    fn test_parse_frequency() {
+        let freq = parse_frequency("10".to_string());
+        assert_eq!(freq, 10);
+
+        let freq = parse_frequency("20K".to_string());
+        assert_eq!(freq, 20_000);
+
+        let freq = parse_frequency("90M".to_string());
+        assert_eq!(freq, 90_000_000);
+
+        let freq = parse_frequency("1.9M".to_string());
+        assert_eq!(freq, 1_900_000);
+
+        let freq = parse_frequency("2.4G".to_string());
+        assert_eq!(freq, 2_400_000_000);
+    }
+
+    #[test]
     fn test_lowpass() {
         // Based on data from rtl_fm
         // rtl_fm -f 92.5M -M fm -s 170k -A fast -r 32k -l 0
@@ -401,7 +429,7 @@ mod tests {
         ];
         let lp_complex = buf_to_complex(lowpass);
 
-        let (_, demod_config) = optimal_settings(FREQUENCY, SAMPLE_RATE);
+        let (_, demod_config) = optimal_settings(100_000_000, SAMPLE_RATE);
         let mut demod = Demod::new(demod_config);
 
         let buf_signed = vec![
@@ -454,9 +482,8 @@ mod tests {
             76, 1228, 2517, 3241, 3490, -6608, -11786, -1057, 3088, 805, -14996, -783, -12842,
             9551, 11213,
         ];
-        let result = vec![2588, 4030, -1212, -3430, 2585, 2110, -6110];
 
-        let (_, demod_config) = optimal_settings(FREQUENCY, SAMPLE_RATE);
+        let (_, demod_config) = optimal_settings(100_000_000, SAMPLE_RATE);
         let mut demod = Demod::new(demod_config);
 
         let demodulated = demod.fm_demod(lp_complex);
@@ -473,7 +500,7 @@ mod tests {
         ];
         let result = vec![2588, 4030, -1212, -3430, 2585, 2110, -6110];
 
-        let (_, demod_config) = optimal_settings(FREQUENCY, SAMPLE_RATE);
+        let (_, demod_config) = optimal_settings(100_000_000, SAMPLE_RATE);
         let mut demod = Demod::new(demod_config);
 
         let output = demod.low_pass_real(demodulated);

@@ -15,3 +15,12 @@ updates:
       interval: "weekly"
     labels:
       - dependencies
+
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "direct"
+    labels:
+      - dependencies

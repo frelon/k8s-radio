@@ -9,8 +9,8 @@ ctrlc = "3.5.1"
 log = "0.4.28"
 num-complex = "0.4.6"
 rtl-sdr-rs = "0.2.1"
-stderrlog = "0.5"
+stderrlog = "0.6"
 
 
 [dev-dependencies]
-stderrlog = "0.5"
+stderrlog = "0.6"

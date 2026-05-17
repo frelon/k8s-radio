@@ -11,6 +11,9 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(target_arch = "aarch64")]
+use std::arch::aarch64::*;
+
 #[derive(Parser)]
 #[command(name = "fmstream")]
 struct Args {
@@ -23,7 +26,7 @@ struct Args {
 
 // Radio and demodulation config
 const SAMPLE_RATE: u32 = 170_000; // Demodulation sample rate, 170kHz
-const RATE_RESAMPLE: u32 = 32_000; // Output sample rate, 32kHz
+const RATE_RESAMPLE: u32 = 16_000; // Output sample rate, 16kHz
 
 fn main() {
     let args = Args::parse();
@@ -246,7 +249,7 @@ impl Demod {
     /// returns a vector of signed 16-bit audio data.
     fn demodulate(&mut self, mut buf: Vec<u8>) -> Vec<i16> {
         buf = Demod::rotate_90(buf);
-        let buf_signed: Vec<i16> = buf.iter().map(|val| *val as i16 - 127).collect();
+        let buf_signed = u8_to_i16_centered(&buf);
         let complex = buf_to_complex(buf_signed);
         // low-pass filter to downsample to our desired sample rate
         let lowpassed = self.low_pass_complex(complex);
@@ -258,15 +261,49 @@ impl Demod {
         self.low_pass_real(demodulated)
     }
 
-    /// Performs a 90-degree rotation in the complex plane on a vector of bytes
-    /// and returns the resulting vector.
-    /// Data is assumed to be pairs of real and imaginary components.
     /// 90 rotation is 1+0j, 0+1j, -1+0j, 0-1j
     /// or rearranging elements according to [0, 1, -3, 2, -4, -5, 7, -6]
     fn rotate_90(mut buf: Vec<u8>) -> Vec<u8> {
+        #[cfg(target_arch = "aarch64")]
+        if std::arch::is_aarch64_feature_detected!("neon") {
+            const PERM: [u8; 16] = [0, 1, 3, 2, 4, 5, 7, 6, 8, 9, 11, 10, 12, 13, 15, 14];
+            const XOR_MASK: [u8; 16] = [0, 0, 0xFF, 0, 0xFF, 0xFF, 0, 0xFF, 0, 0, 0xFF, 0, 0xFF, 0xFF, 0, 0xFF];
+
+            let len = buf.len();
+            let neon_len = len / 16 * 16;
+
+            unsafe {
+                let tbl = vld1q_u8(PERM.as_ptr());
+                let mask = vld1q_u8(XOR_MASK.as_ptr());
+                let ptr = buf.as_mut_ptr();
+
+                for i in (0..neon_len).step_by(16) {
+                    let v = vld1q_u8(ptr.add(i));
+                    let shuffled = vqtbl1q_u8(v, tbl);
+                    let result = veorq_u8(shuffled, mask);
+                    vst1q_u8(ptr.add(i), result);
+                }
+            }
+
+            let mut tmp: u8;
+            for i in (neon_len..len).step_by(8) {
+                tmp = 255 - buf[i + 3];
+                buf[i + 3] = buf[i + 2];
+                buf[i + 2] = tmp;
+
+                buf[i + 4] = 255 - buf[i + 4];
+                buf[i + 5] = 255 - buf[i + 5];
+
+                tmp = 255 - buf[i + 6];
+                buf[i + 6] = buf[i + 7];
+                buf[i + 7] = tmp;
+            }
+
+            return buf;
+        }
+
         let mut tmp: u8;
         for i in (0..buf.len()).step_by(8) {
-            /* uint8_t negation = 255 - x */
             tmp = 255 - buf[i + 3];
             buf[i + 3] = buf[i + 2];
             buf[i + 2] = tmp;
@@ -384,6 +421,34 @@ fn output(buf: Vec<i16>) {
     let _ = out.flush();
 }
 
+fn u8_to_i16_centered(buf: &[u8]) -> Vec<i16> {
+    #[cfg(target_arch = "aarch64")]
+    if std::arch::is_aarch64_feature_detected!("neon") {
+        let len = buf.len();
+        let mut out = vec![0i16; len];
+        let neon_len = len / 16 * 16;
+
+        unsafe {
+            let offset = vdupq_n_s16(127);
+            for i in (0..neon_len).step_by(16) {
+                let v = vld1q_u8(buf.as_ptr().add(i));
+                let lo = vreinterpretq_s16_u16(vmovl_u8(vget_low_u8(v)));
+                let hi = vreinterpretq_s16_u16(vmovl_u8(vget_high_u8(v)));
+                vst1q_s16(out.as_mut_ptr().add(i), vsubq_s16(lo, offset));
+                vst1q_s16(out.as_mut_ptr().add(i + 8), vsubq_s16(hi, offset));
+            }
+        }
+
+        for i in neon_len..len {
+            out[i] = buf[i] as i16 - 127;
+        }
+
+        return out;
+    }
+
+    buf.iter().map(|val| *val as i16 - 127).collect()
+}
+
 /// Convert a vector of i16 complex components (real and imaginary) to a vector of i32 Complex values
 fn buf_to_complex(buf: Vec<i16>) -> Vec<Complex<i32>> {
     buf
@@ -498,7 +563,7 @@ mod tests {
             76, 1228, 2517, 3241, 3490, -6608, -11786, -1057, 3088, 805, -14996, -783, -12842,
             9551, 11213,
         ];
-        let result = vec![2588, 4030, -1212, -3430, 2585, 2110, -6110];
+        let result = vec![3309, -2321, 2347];
 
         let (_, demod_config) = optimal_settings(100_000_000, SAMPLE_RATE);
         let mut demod = Demod::new(demod_config);

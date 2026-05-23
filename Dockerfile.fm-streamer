@@ -4,7 +4,7 @@ RUN mkdir /sysroot && \
     zypper --gpg-auto-import-keys --installroot /sysroot refresh && \
     zypper --non-interactive --installroot /sysroot install -y libusb-1_0-0 glibc libgcc_s1
 
-FROM rust:1.90 AS builder
+FROM rust:1.95 AS builder
 WORKDIR /usr/src/fm-streamer
 COPY Cargo.toml Cargo.lock fm-streamer .
 RUN cargo install --path .

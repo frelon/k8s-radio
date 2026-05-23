@@ -123,6 +123,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile .
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${DP_IMG} -f Dockerfile.device-plugin .
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
+	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${FM_IMG} -f Dockerfile.fm-streamer .
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 
 ##@ Deployment

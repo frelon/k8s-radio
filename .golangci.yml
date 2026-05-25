@@ -12,7 +12,6 @@ linters:
     - gocyclo
     - govet
     - ineffassign
-    - lll
     - modernize
     - misspell
     - nakedret
@@ -22,15 +21,9 @@ linters:
     - unconvert
     - unparam
     - unused
-    - logcheck
   settings:
-    custom:
-      logcheck:
-        type: "module"
-        description: Checks Go logging calls for Kubernetes logging conventions.
     revive:
       rules:
-        - name: comment-spacings
         - name: import-shadowing
     modernize:
       disable:
@@ -39,11 +32,7 @@ linters:
     generated: lax
     rules:
       - linters:
-          - lll
-        path: api/*
-      - linters:
           - dupl
-          - lll
         path: internal/*
     paths:
       - third_party$

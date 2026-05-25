@@ -1,5 +1,5 @@
 /*
-Copyright 2024.
+Copyright 2026.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,83 +17,73 @@ limitations under the License.
 package v1beta1
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	PodFailedReason = "PodFailed"
-	ReadyCondition  = "Ready"
-)
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // RtlSdrReceiverSpec defines the desired state of RtlSdrReceiver
 type RtlSdrReceiverSpec struct {
-	// +kubebuilder:validation:Default=v4
-	Version RtlSdrVersion `json:"version"`
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// Frequency is the radio frequency to tune the receiver to.
-	// +kubebuilder:example="101.9M"
+	// foo is an example field of RtlSdrReceiver. Edit rtlsdrreceiver_types.go to remove/update
 	// +optional
-	Frequency *resource.Quantity `json:"frequency"`
-
-	// ContainerPort contains the port settings for the Pod.
-	// +optional
-	ContainerPort *corev1.ContainerPort `json:"port"`
+	Foo *string `json:"foo,omitempty"`
 }
 
-// RtlSdrVersion is the major version of the rtl-sdr receiver.
-// +kubebuilder:validation:Enum=v3;v4
-type RtlSdrVersion string
-
-const (
-	V3 RtlSdrVersion = "v3"
-	V4 RtlSdrVersion = "v4"
-)
-
-// RtlSdrReceiverStatus defines the observed state of RtlSdrReceiver
+// RtlSdrReceiverStatus defines the observed state of RtlSdrReceiver.
 type RtlSdrReceiverStatus struct {
-	// Conditions describe the state of the receiver.
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 
-	// State describes the current state of the receiver.
-	// +optional
-	State RtlSdrReceiverState `json:"state"`
+	// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
 
-	// Pod is a reference to the underlying pod.
+	// conditions represent the current state of the RtlSdrReceiver resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional
+	// - "Progressing": the resource is being created or updated
+	// - "Degraded": the resource failed to reach or maintain its desired state
+	//
+	// The status of each condition is one of True, False, or Unknown.
+	// +listType=map
+	// +listMapKey=type
 	// +optional
-	Pod *corev1.ObjectReference `json:"pod,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// RtlSdrReceiverState state of the rtl-sdr receiver.
-// +kubebuilder:validation:Enum=Waiting;Running;Failed
-type RtlSdrReceiverState string
-
-const (
-	StateWaiting RtlSdrReceiverState = "Waiting"
-	StateRunning RtlSdrReceiverState = "Running"
-	StateFailed  RtlSdrReceiverState = "Failed"
-)
-
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // RtlSdrReceiver is the Schema for the rtlsdrreceivers API
 type RtlSdrReceiver struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   RtlSdrReceiverSpec   `json:"spec,omitempty"`
-	Status RtlSdrReceiverStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitzero"`
+
+	// spec defines the desired state of RtlSdrReceiver
+	// +required
+	Spec RtlSdrReceiverSpec `json:"spec"`
+
+	// status defines the observed state of RtlSdrReceiver
+	// +optional
+	Status RtlSdrReceiverStatus `json:"status,omitzero"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // RtlSdrReceiverList contains a list of RtlSdrReceiver
 type RtlSdrReceiverList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []RtlSdrReceiver `json:"items"`
 }
 

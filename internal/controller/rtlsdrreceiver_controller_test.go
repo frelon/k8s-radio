@@ -1,108 +1,84 @@
+/*
+Copyright 2026.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controller
 
 import (
-	"time"
+	"context"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	radiov1 "github.com/frelon/k8s-radio/api/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	radiov1beta1 "github.com/frelon/k8s-radio/api/v1beta1"
 )
 
-var _ = Describe("RtlSdrReceiver controller", func() {
-	const (
-		ReceiverName      = "test-receiver"
-		ReceiverNamespace = "default"
+var _ = Describe("RtlSdrReceiver Controller", func() {
+	Context("When reconciling a resource", func() {
+		const resourceName = "test-resource"
 
-		timeout  = time.Second * 10
-		duration = time.Second * 10
-		interval = time.Millisecond * 250
-	)
+		ctx := context.Background()
 
-	scheme := runtime.NewScheme()
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(radiov1.AddToScheme(scheme))
+		typeNamespacedName := types.NamespacedName{
+			Name:      resourceName,
+			Namespace: "default", // TODO(user):Modify as needed
+		}
+		rtlsdrreceiver := &radiov1beta1.RtlSdrReceiver{}
 
-	Context("When updating RtlSdrReceiver Status", func() {
-		It("Should successfully create a new RtlSdrReceiver", func(ctx SpecContext) {
-			By("By creating a new RtlSdrReceiver")
-
-			freq, err := resource.ParseQuantity("101.9M")
-			Expect(err).To(Succeed())
-
-			port := int32(1212)
-
-			recv := &radiov1.RtlSdrReceiver{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "radio.frelon.se/v1",
-					Kind:       "RtlSdrReceiver",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      ReceiverName,
-					Namespace: ReceiverNamespace,
-				},
-				Spec: radiov1.RtlSdrReceiverSpec{
-					Version: radiov1.V3,
-					ContainerPort: &corev1.ContainerPort{
-						ContainerPort: port,
+		BeforeEach(func() {
+			By("creating the custom resource for the Kind RtlSdrReceiver")
+			err := k8sClient.Get(ctx, typeNamespacedName, rtlsdrreceiver)
+			if err != nil && errors.IsNotFound(err) {
+				resource := &radiov1beta1.RtlSdrReceiver{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      resourceName,
+						Namespace: "default",
 					},
-					Frequency: &freq,
-				},
-			}
-
-			Expect(k8sClient.Create(ctx, recv)).Should(Succeed())
-
-			receiverLookupKey := types.NamespacedName{Name: ReceiverName, Namespace: ReceiverNamespace}
-			createdReceiver := &radiov1.RtlSdrReceiver{}
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, receiverLookupKey, createdReceiver)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			Expect(createdReceiver.Spec.Version).Should(Equal(radiov1.V3))
-			Expect(createdReceiver.Spec.Frequency.String()).Should(Equal("101900k"))
-			Expect(createdReceiver.Spec.ContainerPort.ContainerPort).Should(Equal(port))
-			Expect(createdReceiver.Status.State).Should(BeEmpty())
-
-			By("By checking the RtlSdrReceiver has no active Pod")
-			Consistently(func() (bool, error) {
-				err := k8sClient.Get(ctx, receiverLookupKey, createdReceiver)
-				if err != nil {
-					return false, err
+					// TODO(user): Specify other spec details if needed.
 				}
-				return createdReceiver.Status.Pod == nil, nil
-			}, duration, interval).Should(Equal(true))
-
-			By("By running reconciler")
-			reconciler := RtlSdrReceiverReconciler{
-				Client: k8sClient,
-				Scheme: scheme,
-				Image:  "test-image",
+				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
-			_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: receiverLookupKey})
-			Expect(err).To(Succeed())
+		})
 
-			// By("By checking that the RtlSdrReceiver has the correct pod reference")
-			// Eventually(func() (string, error) {
-			// 	err := k8sClient.Get(ctx, receiverLookupKey, createdReceiver)
-			// 	if err != nil {
-			// 		return "", err
-			// 	}
+		AfterEach(func() {
+			// TODO(user): Cleanup logic after each test, like removing the resource instance.
+			resource := &radiov1beta1.RtlSdrReceiver{}
+			err := k8sClient.Get(ctx, typeNamespacedName, resource)
+			Expect(err).NotTo(HaveOccurred())
 
-			// 	if createdReceiver.Status.Pod == nil {
-			// 		return "", nil
-			// 	}
+			By("Cleanup the specific resource instance RtlSdrReceiver")
+			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+		})
+		It("should successfully reconcile the resource", func() {
+			By("Reconciling the created resource")
+			controllerReconciler := &RtlSdrReceiverReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
 
-			// 	return createdReceiver.Status.Pod.Name, nil
-			// }, timeout, interval).Should(Equal(ReceiverName))
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
+			// Example: If you expect a certain status condition after reconciliation, verify it here.
 		})
 	})
 })

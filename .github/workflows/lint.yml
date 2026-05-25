@@ -10,7 +10,7 @@ jobs:
   lint:
     permissions:
       contents: read
-    name: Run on Ubuntu
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code
@@ -23,7 +23,13 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Check linter configuration
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11.4
+
+      - name: Run lint-config
         run: make lint-config
+
       - name: Run linter
         run: make lint

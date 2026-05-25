@@ -94,7 +94,3 @@ type RtlSdrReceiverList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RtlSdrReceiver `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RtlSdrReceiver{}, &RtlSdrReceiverList{})
-}

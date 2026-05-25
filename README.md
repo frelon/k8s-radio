@@ -1,32 +1,37 @@
-# k8s-radio
-// TODO(user): Add simple overview of use/purpose
+# K8s radio
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+An operator that exposes SDR devices to your kubernetes cluster using device-plugin.
 
-## Getting Started
+## Quickstart
 
-### Prerequisites
-- go version v1.24.6+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+This will:
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+- Spin up a kind cluster
+- Build the container images
+- Load the images into the kind cluster
+- Deploy the manager, device-plugin and sample RtlSdrReceiver
 
-```sh
-make docker-build docker-push IMG=<some-registry>/k8s-radio:tag
+```
+make cluster
+make docker-build
+make cluster-load
+make deploy
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+A sample RtlSdrReceiver that will tune to 101.9Mhz and expose the I/Q stream on the host-port 1234.
 
-**Install the CRDs into the cluster:**
-
-```sh
-make install
+```yml
+apiVersion: radio.frelon.se/v1beta1
+kind: RtlSdrReceiver
+metadata:
+  name: rtlsdrreceiver-sample
+spec:
+  version: v3
+  frequency: "101.9M"
+  port:
+    containerPort: 1234
+    hostPort: 1234
+    protocol: TCP
 ```
 
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
@@ -118,4 +123,3 @@ is manually re-applied afterwards.
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
-

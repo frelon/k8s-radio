@@ -79,7 +79,7 @@ var _ = Describe("RtlSdrReceiver controller", func() {
 					return false, err
 				}
 				return createdReceiver.Status.Pod == nil, nil
-			}, duration, interval).Should(Equal(true))
+			}, duration, interval).Should(BeTrue())
 
 			By("By running reconciler")
 			reconciler := RtlSdrReceiverReconciler{

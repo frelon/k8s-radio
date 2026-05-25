@@ -56,7 +56,7 @@ type RtlSdrReceiverReconciler struct {
 // +kubebuilder:rbac:groups=radio.frelon.se,resources=rtlsdrreceivers/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 func (r *RtlSdrReceiverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("name", req.NamespacedName.String())
+	logger := log.FromContext(ctx).WithValues("name", req.String())
 	logger.Info("Reconciling RtlSdrReceiver")
 
 	receiver := &radiov1beta1.RtlSdrReceiver{}

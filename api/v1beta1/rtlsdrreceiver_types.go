@@ -76,10 +76,9 @@ const (
 	StateFailed  RtlSdrReceiverState = "Failed"
 )
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
 // RtlSdrReceiver is the Schema for the rtlsdrreceivers API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type RtlSdrReceiver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -88,15 +87,10 @@ type RtlSdrReceiver struct {
 	Status RtlSdrReceiverStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // RtlSdrReceiverList contains a list of RtlSdrReceiver
+// +kubebuilder:object:root=true
 type RtlSdrReceiverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RtlSdrReceiver `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&RtlSdrReceiver{}, &RtlSdrReceiverList{})
 }

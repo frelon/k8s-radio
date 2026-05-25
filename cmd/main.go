@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -165,7 +166,7 @@ func main() {
 	if err := (&controller.RtlSdrReceiverReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(context.Background(), mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "rtlsdrreceiver")
 		os.Exit(1)
 	}

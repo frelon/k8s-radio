@@ -2,7 +2,7 @@ FROM registry.opensuse.org/opensuse/tumbleweed:latest AS build
 
 RUN mkdir /sysroot && \
     zypper --gpg-auto-import-keys --installroot /sysroot refresh && \
-    zypper --non-interactive --installroot /sysroot install -y libusb-1_0-0 glibc libgcc_s1
+    zypper --non-interactive --installroot /sysroot install -y libusb-1_0-0 glibc libgcc_s1 bash-sh
 
 FROM rust:1.95 AS builder
 WORKDIR /usr/src/fm-streamer

@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/kubevirt/device-plugin-manager v1.19.5
-	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	k8s.io/api v0.36.3
 	k8s.io/apimachinery v0.36.3

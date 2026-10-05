@@ -8,6 +8,10 @@ updates:
       - dependency-type: "direct"
     labels:
       - dependencies
+    groups:
+      go-deps:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -15,6 +19,10 @@ updates:
       interval: "weekly"
     labels:
       - dependencies
+    groups:
+      actions-deps:
+        patterns:
+          - "*"
 
   - package-ecosystem: "rust-toolchain"
     directory: "/"
@@ -24,3 +32,7 @@ updates:
       - dependency-type: "direct"
     labels:
       - dependencies
+    groups:
+      rust-deps:
+        patterns:
+          - "*"

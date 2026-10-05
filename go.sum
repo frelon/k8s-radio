@@ -595,11 +595,11 @@ k8s.io/apimachinery v0.37.1/go.mod h1:jF84AyUi/IRIXRot5f+lm6MpxoWI+F1XgjaMmwCdTF
 k8s.io/apiserver v0.37.0 h1:TXg7OxsOWrAH8J4Zi/gBAZuMw1Dfdd+6cca2h4qjRqo=
 k8s.io/apiserver v0.37.0/go.mod h1:OddHDF4gy9qyIb8o/3+qaeP6S0vEObWLgOygVqXksv0=
 k8s.io/client-go v0.19.2/go.mod h1:S5wPhCqyDNAlzM9CnEdgTGV4OqhsW3jGO1UM1epwfJA=
-k8s.io/client-go v0.37.0 h1:nsN31fy8wBySuZ+QRnKmrjRSQLOG2rvoGN0tKd12zhQ=
-k8s.io/client-go v0.37.0/go.mod h1:FcGqw+Ll/gNQiq+nPGY1Oyt9y7SgDh1d3MW3RFDEbn0=
+k8s.io/client-go v0.37.1 h1:QTv/5ha4jAHtW9qxxVBkQVFBRDb4jHfFopQqqMdc+wM=
+k8s.io/client-go v0.37.1/go.mod h1:dnAPtTnCNY38Ho04D2KdY1F4IKausa9UbqaAZKl60SY=
 k8s.io/component-base v0.19.2/go.mod h1:g5LrsiTiabMLZ40AR6Hl45f088DevyGY+cCE2agEIVo=
-k8s.io/component-base v0.37.0 h1:3SdSa4+itMdFTDFTeR8CxKGmSTSMXFlKL4ky8OqjguM=
-k8s.io/component-base v0.37.0/go.mod h1:LjOebp4R9y6LODWZQv102ZQxGheLcDO2ZJLAw6bbh4I=
+k8s.io/component-base v0.37.1 h1:93DMmlENnK7gNLkL4pMqLO5M/HVf3p3sM4q/GasLveY=
+k8s.io/component-base v0.37.1/go.mod h1:bBrdziT4dreQG5lzTaPVxBwsZe1oxphG+ZVdD56dQWQ=
 k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/klog/v2 v2.0.0/go.mod h1:PBfzABfn139FHAV07az/IF9Wp1bkk3vpT2XSJ76fSDE=
 k8s.io/klog/v2 v2.2.0/go.mod h1:Od+F08eJP+W3HUb4pSrPpgp9DGU4GzlpG/TmITuYh/Y=
@@ -609,8 +609,8 @@ k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6/go.mod h1:UuqjUnNftUyPE5H
 k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad h1:oXImqH8mQNk7PmvzKhmN3ddJoY6OnyM225MXwGHPm0A=
 k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad/go.mod h1:0/mqHCVhlumdJ3BhCfnjSZQE037nAhNodh1/hK0T8/I=
 k8s.io/kubelet v0.19.2/go.mod h1:FHHoByVWzh6kNaarXaDPAa751Oz6REcOVRyFT84L1Is=
-k8s.io/kubelet v0.37.0 h1:VhaZanjlE5CkoAPAjKw0DH+Q0BYXVfYekZgzZDAJMMg=
-k8s.io/kubelet v0.37.0/go.mod h1:PHXfQuVqsTzFVqOeP67UUNv5Ajri+dLGoeaEnW6gGjE=
+k8s.io/kubelet v0.37.1 h1:Z4Hl7BpLQqkS05sjSbu49gSlIhBjvoERoJtDQhc2zhY=
+k8s.io/kubelet v0.37.1/go.mod h1:zqXRPLnFVI0PZduLxjAVK2GK/ymX/m7wlCiH0/BiEgk=
 k8s.io/streaming v0.37.1 h1:TpzVfQeFuVndn2g9mFqxy1UcUYPwDzqjUmwR/IzJCWc=
 k8s.io/streaming v0.37.1/go.mod h1:APlJR26ZWRcVy5bIEj0QRrKUXROtBHPcxl2NT7EAzPU=
 k8s.io/utils v0.0.0-20200729134348-d5654de09c73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=

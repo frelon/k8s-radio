@@ -3,7 +3,6 @@
 IMG ?= controller:dev
 DP_IMG ?= device-plugin:dev
 RTLSDR_IMG ?= rtl-sdr:dev
-FM_IMG ?= fm-streamer:dev
 YEAR ?= $(shell date +%Y)
 
 KIND_NAME ?= kind-radio
@@ -125,7 +124,6 @@ docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --load -t ${IMG} .
 	$(CONTAINER_TOOL) build --load -t ${DP_IMG} -f Dockerfile.device-plugin .
 	$(CONTAINER_TOOL) build --load -t ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
-	$(CONTAINER_TOOL) build --load -t ${FM_IMG} -f Dockerfile.fm-streamer .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
@@ -147,7 +145,6 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile .
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${DP_IMG} -f Dockerfile.device-plugin .
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${RTLSDR_IMG} -f Dockerfile.rtl-sdr .
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${FM_IMG} -f Dockerfile.fm-streamer .
 	- $(CONTAINER_TOOL) buildx rm project-v3-builder
 
 ##@ Deployment

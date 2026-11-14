@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -41,14 +40,10 @@ var _ = Describe("RtlSdrReceiver controller", func() {
 			port := int32(1212)
 
 			recv := &radiov1.RtlSdrReceiver{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "radio.frelon.se/v1",
-					Kind:       "RtlSdrReceiver",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      ReceiverName,
-					Namespace: ReceiverNamespace,
-				},
+				APIVersion: "radio.frelon.se/v1",
+				Kind:       "RtlSdrReceiver",
+				Name:       ReceiverName,
+				Namespace:  ReceiverNamespace,
 				Spec: radiov1.RtlSdrReceiverSpec{
 					Version: radiov1.V3,
 					ContainerPort: &corev1.ContainerPort{

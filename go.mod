@@ -1,6 +1,6 @@
 module github.com/frelon/k8s-radio
 
-go 1.26.0
+go 1.27.2
 
 require (
 	github.com/kubevirt/device-plugin-manager v1.19.5
